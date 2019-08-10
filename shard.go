@@ -39,7 +39,7 @@ type encryptedShard struct {
 }
 
 // newShard returns a populated Shard struct
-func newShard(name string, value, helperPiece []byte) (*shard, error) {
+func newShard(value, helperPiece []byte) (*shard, error) {
 	if len(value) == 0 {
 		return nil, errors.New(errMsgEmptyValue)
 	}

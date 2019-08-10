@@ -12,7 +12,6 @@ import (
 func TestNewShard(t *testing.T) {
 	tests := []struct {
 		testName    string
-		shardName   string
 		shardValue  []byte
 		shardsTotal int
 		expectErr   bool
@@ -20,14 +19,12 @@ func TestNewShard(t *testing.T) {
 	}{
 		{
 			testName:    "positive test",
-			shardName:   "mock shard",
 			shardValue:  []byte{0x80, 0x80, 0x80, 0x80},
 			shardsTotal: 5,
 			expectErr:   false,
 		},
 		{
 			testName:    "empty value test",
-			shardName:   "mock shard",
 			shardValue:  []byte{},
 			shardsTotal: 5,
 			expectErr:   true,
@@ -35,7 +32,7 @@ func TestNewShard(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		s, err := newShard(test.shardName, test.shardValue, nil)
+		s, err := newShard(test.shardValue, nil)
 		if test.expectErr {
 			assert.Nil(t, s, test.testName)
 			assert.EqualError(t, err, test.expectedErr, test.testName)

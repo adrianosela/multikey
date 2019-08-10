@@ -5,7 +5,7 @@ import (
 	mathrand "math/rand"
 	"time"
 
-	"github.com/adrianosela/soothsayer/galois"
+	"github.com/adrianosela/multikey/galois"
 )
 
 const (

@@ -43,7 +43,7 @@ func Encrypt(name string, data []byte, pubs []*rsa.PublicKey, threshold int) (*S
 		h := parts[0]
 
 		for i, part := range parts[1:] {
-			s, err := newShard(name, part, h)
+			s, err := newShard(part, h)
 			if err != nil {
 				return nil, fmt.Errorf("error creating new shard object: %s", err)
 			}
@@ -59,7 +59,7 @@ func Encrypt(name string, data []byte, pubs []*rsa.PublicKey, threshold int) (*S
 			return nil, fmt.Errorf("error splitting rule components: %s", err)
 		}
 		for i, part := range parts {
-			s, err := newShard(name, part, nil)
+			s, err := newShard(part, nil)
 			if err != nil {
 				return nil, fmt.Errorf("error creating new shard object: %s", err)
 			}

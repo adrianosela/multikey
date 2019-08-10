@@ -15,6 +15,5 @@ Example use cases:
 
 Benefits of using this:
 
-- Allows to manage secrets with complex rules
-- Enables anyone to write complex libraries and APIs aroung key management, for example: have server managed keys which are only released on successful auth or MFA
+- Allows for managing secrets with complex rules
 - Allows for secrets to be encrypted at rest, which means they can live on your Github, and you don't have to pay for a database or rely on an external service

@@ -2,6 +2,7 @@ package multikey
 
 import (
 	"crypto/rsa"
+	"errors"
 	"fmt"
 
 	"github.com/adrianosela/multikey/keys"
@@ -14,19 +15,19 @@ type Secret struct {
 }
 
 const (
-	errMsgThresholdTooBig = "threshold must be less than or equal to the amount of keys provided"
+	errMsgDecryptWithTooBig = "decrytpWith must be less than or equal to the amount of keys provided"
 )
 
 // Encrypt encrypts a secret with a set of public keys.
 // you need at least `threshold` keys to decrypt the resultant secret
-func Encrypt(name string, data []byte, pubs []*rsa.PublicKey, threshold int) (*Secret, error) {
-	if threshold > len(pubs) {
-		return nil, fmt.Errorf(errMsgThresholdTooBig)
+func Encrypt(data []byte, pubs []*rsa.PublicKey, decryptWith int) (string, error) {
+	if decryptWith > len(pubs) {
+		return "", fmt.Errorf(errMsgDecryptWithTooBig)
 	}
 	secret := &Secret{
 		shards: []*encryptedShard{},
 	}
-	if threshold == 1 {
+	if decryptWith == 1 {
 		// to handle the shamir secret sharding algorithm limitation on not
 		// being able to split with a threshold of 1, we will create an
 		// additional piece, and append it as the helper to every shard in the rule
@@ -38,43 +39,47 @@ func Encrypt(name string, data []byte, pubs []*rsa.PublicKey, threshold int) (*S
 
 		parts, err := shamir.Split(data, adjustedParts, adjustedThreshold)
 		if err != nil {
-			return nil, fmt.Errorf("error splitting rule components: %s", err)
+			return "", fmt.Errorf("error splitting rule components: %s", err)
 		}
 		h := parts[0]
 
 		for i, part := range parts[1:] {
 			s, err := newShard(part, h)
 			if err != nil {
-				return nil, fmt.Errorf("error creating new shard object: %s", err)
+				return "", fmt.Errorf("error creating new shard object: %s", err)
 			}
 			enc, err := s.encrypt(pubs[i])
 			if err != nil {
-				return nil, fmt.Errorf("error encrypting shard: %s", err)
+				return "", fmt.Errorf("error encrypting shard: %s", err)
 			}
 			secret.shards = append(secret.shards, enc)
 		}
 	} else {
-		parts, err := shamir.Split(data, len(pubs), threshold)
+		parts, err := shamir.Split(data, len(pubs), decryptWith)
 		if err != nil {
-			return nil, fmt.Errorf("error splitting rule components: %s", err)
+			return "", fmt.Errorf("error splitting rule components: %s", err)
 		}
 		for i, part := range parts {
 			s, err := newShard(part, nil)
 			if err != nil {
-				return nil, fmt.Errorf("error creating new shard object: %s", err)
+				return "", fmt.Errorf("error creating new shard object: %s", err)
 			}
 			enc, err := s.encrypt(pubs[i])
 			if err != nil {
-				return nil, fmt.Errorf("error encrypting shard: %s", err)
+				return "", fmt.Errorf("error encrypting shard: %s", err)
 			}
 			secret.shards = append(secret.shards, enc)
 		}
 	}
-	return secret, nil
+	return secret.EncodePEM()
 }
 
 // Decrypt decrypts a secret with a provided set of keys
-func (s *Secret) Decrypt(privs []*rsa.PrivateKey) ([]byte, error) {
+func Decrypt(enc string, privs []*rsa.PrivateKey) ([]byte, error) {
+	s, err := DecodePEM(enc)
+	if err != nil {
+		return nil, errors.New(errMsgCouldNotDecode)
+	}
 	decryptedShBytes := [][]byte{}
 	for _, sh := range s.shards {
 		if k, ok := getKey(privs, sh.KeyID); ok {

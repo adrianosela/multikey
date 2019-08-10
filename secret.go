@@ -73,8 +73,8 @@ func Encrypt(name string, data []byte, pubs []*rsa.PublicKey, threshold int) (*S
 	return secret, nil
 }
 
-// MultikeyDecrypt decrypts a secret with a provided set of keys
-func (s *Secret) MultikeyDecrypt(privs []*rsa.PrivateKey) ([]byte, error) {
+// Decrypt decrypts a secret with a provided set of keys
+func (s *Secret) Decrypt(privs []*rsa.PrivateKey) ([]byte, error) {
 	decryptedShBytes := [][]byte{}
 	for _, sh := range s.shards {
 		if k, ok := getKey(privs, sh.KeyID); ok {

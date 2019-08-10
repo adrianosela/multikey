@@ -23,7 +23,7 @@ func TestEncryptDecrypt(t *testing.T) {
 	if err != nil {
 		assert.Fail(t, err.Error())
 	}
-	plain, err := s.MultikeyDecrypt(privs)
+	plain, err := s.Decrypt(privs)
 	if err != nil {
 		assert.Fail(t, "could not decrypt test secret")
 	}

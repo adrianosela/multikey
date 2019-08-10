@@ -1,12 +1,18 @@
 package multikey
 
 import (
-	"crypto/rsa"
+	"encoding/pem"
 	"errors"
 	"fmt"
+	"strings"
+)
 
-	"github.com/adrianosela/multikey/keys"
-	"github.com/adrianosela/multikey/shamir"
+const (
+	pemBlockType       = "MULTIKEY ENCRYPTED SECRET"
+	simpleFmtSeparator = "\n"
+
+	errMsgInvalidSimpleFmt  = "bad format"
+	errMsgCouldNotDecodePEM = "could not decode pem block"
 )
 
 // Secret represents an encrypted secret
@@ -14,97 +20,102 @@ type Secret struct {
 	shards []*encryptedShard
 }
 
-const (
-	errMsgDecryptWithTooBig = "decrytpWith must be less than or equal to the amount of keys provided"
-)
-
-// Encrypt encrypts a secret with a set of public keys.
-// you need at least `threshold` keys to decrypt the resultant secret
-func Encrypt(data []byte, pubs []*rsa.PublicKey, decryptWith int) (string, error) {
-	if decryptWith > len(pubs) {
-		return "", fmt.Errorf(errMsgDecryptWithTooBig)
-	}
-	secret := &Secret{
-		shards: []*encryptedShard{},
-	}
-	if decryptWith == 1 {
-		// to handle the shamir secret sharding algorithm limitation on not
-		// being able to split with a threshold of 1, we will create an
-		// additional piece, and append it as the helper to every shard in the rule
-		adjustedParts := len(pubs)
-		if adjustedParts < 2 {
-			adjustedParts = 2
-		}
-		adjustedThreshold := 2
-
-		parts, err := shamir.Split(data, adjustedParts, adjustedThreshold)
-		if err != nil {
-			return "", fmt.Errorf("error splitting rule components: %s", err)
-		}
-		h := parts[0]
-
-		for i, part := range parts[1:] {
-			s, err := newShard(part, h)
-			if err != nil {
-				return "", fmt.Errorf("error creating new shard object: %s", err)
-			}
-			enc, err := s.encrypt(pubs[i])
-			if err != nil {
-				return "", fmt.Errorf("error encrypting shard: %s", err)
-			}
-			secret.shards = append(secret.shards, enc)
-		}
-	} else {
-		parts, err := shamir.Split(data, len(pubs), decryptWith)
-		if err != nil {
-			return "", fmt.Errorf("error splitting rule components: %s", err)
-		}
-		for i, part := range parts {
-			s, err := newShard(part, nil)
-			if err != nil {
-				return "", fmt.Errorf("error creating new shard object: %s", err)
-			}
-			enc, err := s.encrypt(pubs[i])
-			if err != nil {
-				return "", fmt.Errorf("error encrypting shard: %s", err)
-			}
-			secret.shards = append(secret.shards, enc)
-		}
-	}
-	return secret.EncodePEM()
+// EncodePEM returns an encrypted secret in a PEM block
+func (s *Secret) EncodePEM() (string, error) {
+	pemBytes := pem.EncodeToMemory(&pem.Block{
+		Type:  pemBlockType,
+		Bytes: []byte(s.EncodeSimple()),
+	})
+	return string(pemBytes), nil
 }
 
-// Decrypt decrypts a secret with a provided set of keys
-func Decrypt(enc string, privs []*rsa.PrivateKey) ([]byte, error) {
-	s, err := DecodePEM(enc)
+// DecodePEM returns an encrypted secret from a pem block
+func DecodePEM(s string) (*Secret, error) {
+	block, _ := pem.Decode([]byte(s))
+	if block == nil {
+		return nil, errors.New(errMsgCouldNotDecodePEM)
+	}
+	sec, err := DecodeSimple(string(block.Bytes))
 	if err != nil {
-		return nil, errors.New(errMsgCouldNotDecode)
+		return nil, err
 	}
-	decryptedShBytes := [][]byte{}
-	for _, sh := range s.shards {
-		if k, ok := getKey(privs, sh.KeyID); ok {
-			decrypted, err := sh.decrypt(k)
-			if err != nil {
-				continue // pass
-			}
-			decryptedShBytes = append(decryptedShBytes, decrypted.Value)
-			if decrypted.HelperPiece != nil {
-				decryptedShBytes = append(decryptedShBytes, decrypted.HelperPiece)
-				// if we get a helper piece it means we have a secret encrypted with
-				// threshold = 1, we return right away
-				break
-			}
-		}
-	}
-	return shamir.Combine(decryptedShBytes)
+	return sec, nil
 }
 
-func getKey(privs []*rsa.PrivateKey, id string) (*rsa.PrivateKey, bool) {
-	for _, p := range privs {
-		fp := keys.GetFingerprint(&p.PublicKey)
-		if fp == id {
-			return p, true
+// EncodeSimple returns a simple string representation of the encrypted secret.
+// This format is KEY_ID(VALUE) or KEY_ID(VALUE)(HELPER) depending on whether a
+// helper was needed to shard the secret
+func (s *Secret) EncodeSimple() string {
+	ret := ""
+	for i, sh := range s.shards {
+		if sh.Helper != "" {
+			ret = strings.Join([]string{ret, fmt.Sprintf("%s(%s)(%s)", sh.KeyID, sh.Value, sh.Helper)}, "")
+		} else {
+			ret = strings.Join([]string{ret, fmt.Sprintf("%s(%s)", sh.KeyID, sh.Value)}, "")
+		}
+		if i != len(s.shards)-1 {
+			ret = strings.Join([]string{ret, simpleFmtSeparator}, "")
 		}
 	}
-	return nil, false
+	return ret
+}
+
+// DecodeSimple returns a sharded representation of the encrypted secret
+func DecodeSimple(s string) (*Secret, error) {
+	parts := strings.Split(s, simpleFmtSeparator)
+	if len(parts) < 1 {
+		return nil, errors.New(errMsgInvalidSimpleFmt)
+	}
+	sec := &Secret{shards: []*encryptedShard{}}
+	for _, p := range parts {
+		var es *encryptedShard
+		var err error
+		// if there is a helper shard
+		if strings.Contains(p, ")(") {
+			if es, err = decodeWithHelper(p); err != nil {
+				return nil, err
+			}
+		} else { // no helper
+			if es, err = decode(p); err != nil {
+				return nil, err
+			}
+		}
+		sec.shards = append(sec.shards, es)
+	}
+	return sec, nil
+}
+
+func decodeWithHelper(simpleEncodedShard string) (*encryptedShard, error) {
+	p1 := strings.Split(simpleEncodedShard, ")(")
+	if len(p1) < 2 {
+		return nil, errors.New(errMsgInvalidSimpleFmt)
+	}
+	p2 := strings.Split(p1[0], "(")
+	if len(p2) < 2 {
+		return nil, errors.New(errMsgInvalidSimpleFmt)
+	}
+	p3 := strings.Split(p1[1], ")")
+	if len(p3) < 2 {
+		return nil, errors.New(errMsgInvalidSimpleFmt)
+	}
+	return &encryptedShard{
+		KeyID:  p2[0],
+		Value:  p2[1],
+		Helper: p3[0],
+	}, nil
+}
+
+func decode(simpleEncodedShard string) (*encryptedShard, error) {
+	p1 := strings.Split(simpleEncodedShard, "(")
+	if len(p1) < 2 {
+		return nil, errors.New(errMsgInvalidSimpleFmt)
+	}
+	p2 := strings.Split(p1[1], ")")
+	if len(p2) < 2 {
+		return nil, errors.New(errMsgInvalidSimpleFmt)
+	}
+	return &encryptedShard{
+		KeyID: p1[0],
+		Value: p2[0],
+	}, nil
 }

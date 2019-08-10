@@ -56,8 +56,6 @@ func Mult(a, b uint8) uint8 {
 // - Look up the difference on the exp table, this is the GF(2^8) quotient.
 func Div(a, b uint8) uint8 {
 	if b == 0 {
-		// leaks some timing information but we don't care anyways as this
-		// should never happen, hence the panic
 		panic("divide by zero")
 	}
 	var goodVal, zero uint8

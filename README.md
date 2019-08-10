@@ -1,5 +1,11 @@
 # multikey - secrets framework
 
+Allows for the creation of decryption rules for secrets at rest, for example:
+
+- Decrypt if **any** of 5 keys are provided
+- Decrypt if **all** of 5 keys are provided
+- Decrypt if **at least 3** of 5 keys are provided
+
 Example use cases:
 
 - I want anyone on my team to be able to decrypt shared application runtime secrets with their own key locally, and have my deployments be able to decrypt the same secrets by fetching a decryption key from AWS KMS

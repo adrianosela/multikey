@@ -15,7 +15,6 @@ func TestEncryptDecrypt(t *testing.T) {
 	n := 10
 	testSecret := []byte("test secret value")
 	privs, pubs := []*rsa.PrivateKey{}, []*rsa.PublicKey{}
-
 	// generate n keys
 	for k := 0; k < n; k++ {
 		pri, pub, err := keys.GenerateRSAKeyPair(2048)
@@ -25,7 +24,6 @@ func TestEncryptDecrypt(t *testing.T) {
 		privs = append(privs, pri)
 		pubs = append(pubs, pub)
 	}
-
 	// encrypt with 1 to n keys
 	for e := 1; e <= n; e++ {
 		s, err := Encrypt(testSecret, pubs, e)

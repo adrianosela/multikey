@@ -1,5 +1,10 @@
 # multikey - secrets framework
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/adrianosela/multikey)](https://goreportcard.com/report/github.com/adrianosela/multikey)
+[![GitHub issues](https://img.shields.io/github/issues/adrianosela/multikey.svg)](https://github.com/adrianosela/multikey/issues)
+[![Documentation](https://godoc.org/github.com//adrianosela/multikey?status.svg)](https://godoc.org/github.com/adrianosela/multikey)
+[![license](https://img.shields.io/github/license/adrianosela/multikey.svg)](https://github.com/adrianosela/multikey/blob/master/LICENSE)
+
 Allows for the creation of decryption rules for secrets at rest, for example:
 
 - Decrypt if **any** of 5 keys are provided

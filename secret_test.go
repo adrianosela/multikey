@@ -25,13 +25,13 @@ func TestDecodeSimple(t *testing.T) {
 func TestEncodeDecodePEM(t *testing.T) {
 	tests := []struct {
 		testName      string
-		testSecret    *Secret
+		testSecret    *secret
 		expectErr     bool
 		expectedError string
 	}{
 		{
 			testName: "positive test",
-			testSecret: &Secret{
+			testSecret: &secret{
 				shards: []*encryptedShard{
 					{
 						KeyID: "some key id",
@@ -47,7 +47,7 @@ func TestEncodeDecodePEM(t *testing.T) {
 		},
 		{
 			testName: "positive test helper",
-			testSecret: &Secret{
+			testSecret: &secret{
 				shards: []*encryptedShard{
 					{
 						KeyID:  "some key id",
@@ -61,12 +61,12 @@ func TestEncodeDecodePEM(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		enc, err := test.testSecret.EncodePEM()
+		enc, err := test.testSecret.encodePEM()
 		if test.expectErr {
 			assert.EqualError(t, err, test.expectedError, test.testName)
 			continue
 		}
-		dec, err := DecodePEM(enc)
+		dec, err := decodePEM(enc)
 		if test.expectErr {
 			assert.EqualError(t, err, test.expectedError, test.testName)
 			continue

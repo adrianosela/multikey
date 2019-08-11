@@ -19,7 +19,7 @@ func Encrypt(data []byte, pubs []*rsa.PublicKey, decryptWith int) (string, error
 	if decryptWith > len(pubs) {
 		return "", fmt.Errorf(errMsgDecryptWithTooBig)
 	}
-	secret := &Secret{
+	secret := &secret{
 		shards: []*encryptedShard{},
 	}
 	if decryptWith == 1 {
@@ -66,12 +66,12 @@ func Encrypt(data []byte, pubs []*rsa.PublicKey, decryptWith int) (string, error
 			secret.shards = append(secret.shards, enc)
 		}
 	}
-	return secret.EncodePEM()
+	return secret.encodePEM()
 }
 
 // Decrypt decrypts a secret with a provided set of keys
 func Decrypt(enc string, privs []*rsa.PrivateKey) ([]byte, error) {
-	s, err := DecodePEM(enc)
+	s, err := decodePEM(enc)
 	if err != nil {
 		return nil, errors.New(errMsgCouldNotDecode)
 	}

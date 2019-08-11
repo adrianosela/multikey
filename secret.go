@@ -15,27 +15,27 @@ const (
 	errMsgCouldNotDecodePEM = "could not decode pem block"
 )
 
-// Secret represents an encrypted secret
-type Secret struct {
+// secret represents an encrypted secret
+type secret struct {
 	shards []*encryptedShard
 }
 
-// EncodePEM returns an encrypted secret in a PEM block
-func (s *Secret) EncodePEM() (string, error) {
+// encodePEM returns an encrypted secret in a PEM block
+func (s *secret) encodePEM() (string, error) {
 	pemBytes := pem.EncodeToMemory(&pem.Block{
 		Type:  pemBlockType,
-		Bytes: []byte(s.EncodeSimple()),
+		Bytes: []byte(s.encodeSimple()),
 	})
 	return string(pemBytes), nil
 }
 
-// DecodePEM returns an encrypted secret from a pem block
-func DecodePEM(s string) (*Secret, error) {
+// decodePEM returns an encrypted secret from a pem block
+func decodePEM(s string) (*secret, error) {
 	block, _ := pem.Decode([]byte(s))
 	if block == nil {
 		return nil, errors.New(errMsgCouldNotDecodePEM)
 	}
-	sec, err := DecodeSimple(string(block.Bytes))
+	sec, err := decodeSimple(string(block.Bytes))
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func DecodePEM(s string) (*Secret, error) {
 // EncodeSimple returns a simple string representation of the encrypted secret.
 // This format is KEY_ID(VALUE) or KEY_ID(VALUE)(HELPER) depending on whether a
 // helper was needed to shard the secret
-func (s *Secret) EncodeSimple() string {
+func (s *secret) encodeSimple() string {
 	ret := ""
 	for i, sh := range s.shards {
 		if sh.Helper != "" {
@@ -60,13 +60,13 @@ func (s *Secret) EncodeSimple() string {
 	return ret
 }
 
-// DecodeSimple returns a sharded representation of the encrypted secret
-func DecodeSimple(s string) (*Secret, error) {
+// decodeSimple returns a sharded representation of the encrypted secret
+func decodeSimple(s string) (*secret, error) {
 	parts := strings.Split(s, simpleFmtSeparator)
 	if len(parts) < 1 {
 		return nil, errors.New(errMsgInvalidSimpleFmt)
 	}
-	sec := &Secret{shards: []*encryptedShard{}}
+	sec := &secret{shards: []*encryptedShard{}}
 	for _, p := range parts {
 		var es *encryptedShard
 		var err error

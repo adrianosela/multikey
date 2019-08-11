@@ -10,19 +10,19 @@ import (
 )
 
 const (
-	errMsgDecryptWithTooBig = "decryptWith must be less than or equal to the amount of keys provided"
+	errMsgRequireTooBig = "require must be less than or equal to the amount of keys provided"
 )
 
-// Encrypt encrypts a secret with a set of public keys.
-// you need at least `threshold` keys to decrypt the resultant secret
-func Encrypt(data []byte, pubs []*rsa.PublicKey, decryptWith int) (string, error) {
-	if decryptWith > len(pubs) {
-		return "", fmt.Errorf(errMsgDecryptWithTooBig)
+// Encrypt encrypts a secret with a given set of public keys.
+// The secret will be decryptable with `require` of the given keys.
+func Encrypt(data []byte, pubs []*rsa.PublicKey, require int) (string, error) {
+	if require > len(pubs) {
+		return "", fmt.Errorf(errMsgRequireTooBig)
 	}
 	secret := &secret{
 		shards: []*encryptedShard{},
 	}
-	if decryptWith == 1 {
+	if require == 1 {
 		// to handle the shamir secret sharding algorithm limitation on not
 		// being able to split with a threshold of 1, we will create an
 		// additional piece, and append it as the helper to every shard in the rule
@@ -50,7 +50,7 @@ func Encrypt(data []byte, pubs []*rsa.PublicKey, decryptWith int) (string, error
 			secret.shards = append(secret.shards, enc)
 		}
 	} else {
-		parts, err := shamir.Split(data, len(pubs), decryptWith)
+		parts, err := shamir.Split(data, len(pubs), require)
 		if err != nil {
 			return "", fmt.Errorf("error splitting rule components: %s", err)
 		}
@@ -69,7 +69,7 @@ func Encrypt(data []byte, pubs []*rsa.PublicKey, decryptWith int) (string, error
 	return secret.encodePEM()
 }
 
-// Decrypt decrypts a secret with a provided set of keys
+// Decrypt decrypts a secret with a provided set of keys.
 func Decrypt(enc string, privs []*rsa.PrivateKey) ([]byte, error) {
 	s, err := decodePEM(enc)
 	if err != nil {

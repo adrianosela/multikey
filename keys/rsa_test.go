@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"crypto/rsa"
 	"strings"
 	"testing"
 
@@ -149,17 +150,76 @@ func TestGetFingerPrint(t *testing.T) {
 }
 
 func TestEncryptMessage(t *testing.T) {
-	// todo
+	// positive test
+	pub, err := DecodePubKeyPEM(pubA)
+	assert.Nil(t, err)
+	assert.NotNil(t, pub)
+	encrypted, err := EncryptMessage([]byte("secretmsg"), pub)
+	assert.Nil(t, err)
+	assert.NotNil(t, encrypted)
+
+	// negative test
+	encrypted, err = EncryptMessage([]byte("secretmsg"), &rsa.PublicKey{})
+	assert.Nil(t, encrypted)
+	assert.NotNil(t, err)
 }
 
 func TestDecryptMessage(t *testing.T) {
-	// todo
+	// preconditions
+	pub, err := DecodePubKeyPEM(pubA)
+	assert.Nil(t, err)
+	assert.NotNil(t, pub)
+	priv, err := DecodePrivKeyPEM(privA)
+	assert.Nil(t, err)
+	assert.NotNil(t, priv)
+	privB, err := DecodePrivKeyPEM(privB)
+	assert.Nil(t, err)
+	assert.NotNil(t, priv)
+	secret := []byte("secretmsg")
+	encrypted, err := EncryptMessage(secret, pub)
+	assert.Nil(t, err)
+	assert.NotNil(t, encrypted)
+
+	// positive test
+	decrypted, err := DecryptMessage(encrypted, priv)
+	assert.Nil(t, err)
+	assert.NotNil(t, decrypted)
+	assert.Equal(t, secret, decrypted)
+
+	// negative test
+	decrypted, err = DecryptMessage(encrypted, privB)
+	assert.NotNil(t, err)
+	assert.Nil(t, decrypted)
 }
 
 func TestEncryptMessageWithPEMKey(t *testing.T) {
-	// todo
+	secret := []byte("secretmsg")
+
+	// positive test
+	encrypted, err := EncryptMessageWithPEMKey(secret, pubA)
+	assert.Nil(t, err)
+	assert.NotNil(t, encrypted)
+
+	// negative test - bad key
+	encrypted, err = EncryptMessageWithPEMKey(secret, []byte(""))
+	assert.NotNil(t, err)
+	assert.Nil(t, encrypted)
 }
 
 func TestDecryptMessageWithPEMKey(t *testing.T) {
-	// todo
+	// preconditions
+	secret := []byte("secretmsg")
+	encrypted, err := EncryptMessageWithPEMKey(secret, pubA)
+	assert.Nil(t, err)
+	assert.NotNil(t, encrypted)
+
+	// positive test
+	decrypted, err := DecryptMessageWithPEMKey(encrypted, privA)
+	assert.Nil(t, err)
+	assert.NotNil(t, decrypted)
+
+	// negative test - bad key
+	decrypted, err = DecryptMessageWithPEMKey(encrypted, []byte(""))
+	assert.NotNil(t, err)
+	assert.Nil(t, decrypted)
 }

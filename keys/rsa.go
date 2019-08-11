@@ -92,11 +92,7 @@ func EncryptMessageWithPEMKey(plaintxt []byte, pub []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	cyphertxt, err := EncryptMessage(plaintxt, k)
-	if err != nil {
-		return nil, err
-	}
-	return cyphertxt, nil
+	return EncryptMessage(plaintxt, k)
 }
 
 // DecryptMessageWithPEMKey decrypts an encrypted message with a PEM private key
@@ -105,9 +101,5 @@ func DecryptMessageWithPEMKey(cyphertxt []byte, priv []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	plaintxt, err := DecryptMessage(cyphertxt, k)
-	if err != nil {
-		return nil, err
-	}
-	return plaintxt, nil
+	return DecryptMessage(cyphertxt, k)
 }

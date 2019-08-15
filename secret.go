@@ -43,8 +43,7 @@ func decodePEM(s string) (*secret, error) {
 }
 
 // EncodeSimple returns a simple string representation of the encrypted secret.
-// This format is KEY_ID(VALUE) or KEY_ID(VALUE)(HELPER) depending on whether a
-// helper was needed to shard the secret
+// This format is KEY_ID(VALUE)
 func (s *secret) encodeSimple() string {
 	ret := ""
 	for i, sh := range s.shards {
@@ -59,9 +58,6 @@ func (s *secret) encodeSimple() string {
 // decodeSimpleSecret returns a sharded representation of the encrypted secret
 func decodeSimpleSecret(s string) (*secret, error) {
 	parts := strings.Split(s, simpleFmtSeparator)
-	if len(parts) < 1 {
-		return nil, errors.New(errMsgInvalidSimpleFmt)
-	}
 	sec := &secret{shards: []*encryptedShard{}}
 	for _, p := range parts {
 		es, err := decodeSimple(p)

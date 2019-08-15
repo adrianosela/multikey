@@ -18,8 +18,54 @@ func TestEncodeSimple(t *testing.T) {
 	// TODO
 }
 
-func TestDecodeSimple(t *testing.T) {
-	// TODO
+func TestDecodeSimpleSecret(t *testing.T) {
+	tests := []struct {
+		testName     string
+		toParse      string
+		expectShards []*encryptedShard
+		expectErr    bool
+		expectedErr  string
+	}{
+		{
+			testName: "positive test",
+			toParse:  "SOMEKEYID(SOMEVALUE)",
+			expectShards: []*encryptedShard{
+				{
+					KeyID: "SOMEKEYID",
+					Value: "SOMEVALUE",
+				},
+			},
+			expectErr: false,
+		},
+		{
+			testName:    "negative test - bad format 1",
+			toParse:     "SOMEKEYIDSOMEVALUE)",
+			expectErr:   true,
+			expectedErr: errMsgInvalidSimpleFmt,
+		},
+		{
+			testName:    "negative test - bad format 2",
+			toParse:     "",
+			expectErr:   true,
+			expectedErr: errMsgInvalidSimpleFmt,
+		},
+		{
+			testName:    "negative test - bad format 3",
+			toParse:     "SOMEKEY(",
+			expectErr:   true,
+			expectedErr: errMsgInvalidSimpleFmt,
+		},
+	}
+
+	for _, test := range tests {
+		sec, err := decodeSimpleSecret(test.toParse)
+		if test.expectErr {
+			assert.Nil(t, sec, test.testName)
+			assert.EqualError(t, err, test.expectedErr, test.testName)
+		} else {
+			assert.EqualValues(t, sec.shards, test.expectShards, test.testName)
+		}
+	}
 }
 
 func TestEncodeDecodePEM(t *testing.T) {

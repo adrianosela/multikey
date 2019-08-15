@@ -45,19 +45,6 @@ func TestEncodeDecodePEM(t *testing.T) {
 			},
 			expectErr: false,
 		},
-		{
-			testName: "positive test helper",
-			testSecret: &secret{
-				shards: []*encryptedShard{
-					{
-						KeyID:  "some key id",
-						Value:  "asdfghjkl",
-						Helper: "asdfghjkl",
-					},
-				},
-			},
-			expectErr: false,
-		},
 	}
 
 	for _, test := range tests {

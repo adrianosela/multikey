@@ -22,49 +22,20 @@ func Encrypt(data []byte, pubs []*rsa.PublicKey, require int) (string, error) {
 	secret := &secret{
 		shards: []*encryptedShard{},
 	}
-	if require == 1 {
-		// to handle the shamir secret sharding algorithm limitation on not
-		// being able to split with a threshold of 1, we will create an
-		// additional piece, and append it as the helper to every shard in the rule
-		adjustedParts := len(pubs)
-		if adjustedParts < 2 {
-			adjustedParts = 2
-		}
-		adjustedThreshold := 2
-
-		parts, err := shamir.Split(data, adjustedParts, adjustedThreshold)
+	parts, err := shamir.Split(data, len(pubs), require)
+	if err != nil {
+		return "", fmt.Errorf("error splitting rule components: %s", err)
+	}
+	for i, part := range parts {
+		s, err := newShard(part)
 		if err != nil {
-			return "", fmt.Errorf("error splitting rule components: %s", err)
+			return "", fmt.Errorf("error creating new shard object: %s", err)
 		}
-		h := parts[0]
-
-		for i, part := range parts[1:] {
-			s, err := newShard(part, h)
-			if err != nil {
-				return "", fmt.Errorf("error creating new shard object: %s", err)
-			}
-			enc, err := s.encrypt(pubs[i])
-			if err != nil {
-				return "", fmt.Errorf("error encrypting shard: %s", err)
-			}
-			secret.shards = append(secret.shards, enc)
-		}
-	} else {
-		parts, err := shamir.Split(data, len(pubs), require)
+		enc, err := s.encrypt(pubs[i])
 		if err != nil {
-			return "", fmt.Errorf("error splitting rule components: %s", err)
+			return "", fmt.Errorf("error encrypting shard: %s", err)
 		}
-		for i, part := range parts {
-			s, err := newShard(part, nil)
-			if err != nil {
-				return "", fmt.Errorf("error creating new shard object: %s", err)
-			}
-			enc, err := s.encrypt(pubs[i])
-			if err != nil {
-				return "", fmt.Errorf("error encrypting shard: %s", err)
-			}
-			secret.shards = append(secret.shards, enc)
-		}
+		secret.shards = append(secret.shards, enc)
 	}
 	return secret.encodePEM()
 }
@@ -83,12 +54,6 @@ func Decrypt(enc string, privs []*rsa.PrivateKey) ([]byte, error) {
 				continue // pass
 			}
 			decryptedShBytes = append(decryptedShBytes, decrypted.Value)
-			if decrypted.HelperPiece != nil {
-				decryptedShBytes = append(decryptedShBytes, decrypted.HelperPiece)
-				// if we get a helper piece it means we have a secret encrypted with
-				// threshold = 1, we return right away
-				break
-			}
 		}
 	}
 	return shamir.Combine(decryptedShBytes)

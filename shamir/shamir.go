@@ -8,13 +8,6 @@ import (
 	"github.com/adrianosela/multikey/galois"
 )
 
-const (
-	// ShareOverhead is the byte size overhead of each share
-	// when using Split on a secret. This is caused by appending
-	// a one byte tag to the share.
-	ShareOverhead = 1
-)
-
 // Split takes an arbitrarily long secret and generates a `parts`
 // number of shares, `threshold` of which are required to reconstruct
 // the secret. The parts and threshold must be at least 2, and less
@@ -31,8 +24,8 @@ func Split(secret []byte, parts, threshold int) ([][]byte, error) {
 	if parts > 255 {
 		return nil, fmt.Errorf("parts cannot exceed 255")
 	}
-	if threshold < 2 {
-		return nil, fmt.Errorf("threshold must be at least 2")
+	if threshold < 1 {
+		return nil, fmt.Errorf("threshold must be at least 1")
 	}
 	if len(secret) == 0 {
 		return nil, fmt.Errorf("cannot split an empty secret")
@@ -76,16 +69,15 @@ func Split(secret []byte, parts, threshold int) ([][]byte, error) {
 // once a `threshold` number of parts are available.
 func Combine(parts [][]byte) ([]byte, error) {
 	// Verify enough parts provided
-	if len(parts) < 2 {
-		return nil, fmt.Errorf("less than two parts cannot be used to reconstruct the secret")
+	if len(parts) < 1 {
+		return nil, fmt.Errorf("less than one parts cannot be used to reconstruct the secret")
 	}
-
 	// Verify the parts are all the same length
 	firstPartLen := len(parts[0])
 	if firstPartLen < 2 {
 		return nil, fmt.Errorf("parts must be at least two bytes")
 	}
-	for i := 1; i < len(parts); i++ {
+	for i := 0; i < len(parts); i++ {
 		if len(parts[i]) != firstPartLen {
 			return nil, fmt.Errorf("all parts must be the same length")
 		}

@@ -20,10 +20,6 @@ func TestSplit_invalid(t *testing.T) {
 		t.Fatalf("expect error")
 	}
 
-	if _, err := Split(secret, 10, 1); err == nil {
-		t.Fatalf("expect error")
-	}
-
 	if _, err := Split(secret, 350, 300); err == nil {
 		t.Fatalf("expect error")
 	}

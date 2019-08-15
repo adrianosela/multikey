@@ -32,7 +32,7 @@ func TestNewShard(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		s, err := newShard(test.shardValue, nil)
+		s, err := newShard(test.shardValue)
 		if test.expectErr {
 			assert.Nil(t, s, test.testName)
 			assert.EqualError(t, err, test.expectedErr, test.testName)
@@ -63,24 +63,6 @@ func TestEncrypt(t *testing.T) {
 			testName: "positive test",
 			shard: &shard{
 				Value: []byte{0x80, 0x80, 0x80, 0x80},
-			},
-			key:       goodKey,
-			expectErr: false,
-		},
-		{
-			testName: "positive test with helper",
-			shard: &shard{
-				Value:       []byte{0x80, 0x80, 0x80, 0x80},
-				HelperPiece: []byte{0x80, 0x80, 0x80, 0x80},
-			},
-			key:       goodKey,
-			expectErr: false,
-		},
-		{
-			testName: "negative test with helper",
-			shard: &shard{
-				Value:       []byte{0x80, 0x80, 0x80, 0x80},
-				HelperPiece: []byte{},
 			},
 			key:       goodKey,
 			expectErr: false,

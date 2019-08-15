@@ -35,7 +35,7 @@ func decodePEM(s string) (*secret, error) {
 	if block == nil {
 		return nil, errors.New(errMsgCouldNotDecodePEM)
 	}
-	sec, err := decodeSimple(string(block.Bytes))
+	sec, err := decodeSimpleSecret(string(block.Bytes))
 	if err != nil {
 		return nil, err
 	}
@@ -48,11 +48,7 @@ func decodePEM(s string) (*secret, error) {
 func (s *secret) encodeSimple() string {
 	ret := ""
 	for i, sh := range s.shards {
-		if sh.Helper != "" {
-			ret = strings.Join([]string{ret, fmt.Sprintf("%s(%s)(%s)", sh.KeyID, sh.Value, sh.Helper)}, "")
-		} else {
-			ret = strings.Join([]string{ret, fmt.Sprintf("%s(%s)", sh.KeyID, sh.Value)}, "")
-		}
+		ret = strings.Join([]string{ret, fmt.Sprintf("%s(%s)", sh.KeyID, sh.Value)}, "")
 		if i != len(s.shards)-1 {
 			ret = strings.Join([]string{ret, simpleFmtSeparator}, "")
 		}
@@ -60,52 +56,24 @@ func (s *secret) encodeSimple() string {
 	return ret
 }
 
-// decodeSimple returns a sharded representation of the encrypted secret
-func decodeSimple(s string) (*secret, error) {
+// decodeSimpleSecret returns a sharded representation of the encrypted secret
+func decodeSimpleSecret(s string) (*secret, error) {
 	parts := strings.Split(s, simpleFmtSeparator)
 	if len(parts) < 1 {
 		return nil, errors.New(errMsgInvalidSimpleFmt)
 	}
 	sec := &secret{shards: []*encryptedShard{}}
 	for _, p := range parts {
-		var es *encryptedShard
-		var err error
-		// if there is a helper shard
-		if strings.Contains(p, ")(") {
-			if es, err = decodeWithHelper(p); err != nil {
-				return nil, err
-			}
-		} else { // no helper
-			if es, err = decode(p); err != nil {
-				return nil, err
-			}
+		es, err := decodeSimple(p)
+		if err != nil {
+			return nil, err
 		}
 		sec.shards = append(sec.shards, es)
 	}
 	return sec, nil
 }
 
-func decodeWithHelper(simpleEncodedShard string) (*encryptedShard, error) {
-	p1 := strings.Split(simpleEncodedShard, ")(")
-	if len(p1) < 2 {
-		return nil, errors.New(errMsgInvalidSimpleFmt)
-	}
-	p2 := strings.Split(p1[0], "(")
-	if len(p2) < 2 {
-		return nil, errors.New(errMsgInvalidSimpleFmt)
-	}
-	p3 := strings.Split(p1[1], ")")
-	if len(p3) < 2 {
-		return nil, errors.New(errMsgInvalidSimpleFmt)
-	}
-	return &encryptedShard{
-		KeyID:  p2[0],
-		Value:  p2[1],
-		Helper: p3[0],
-	}, nil
-}
-
-func decode(simpleEncodedShard string) (*encryptedShard, error) {
+func decodeSimple(simpleEncodedShard string) (*encryptedShard, error) {
 	p1 := strings.Split(simpleEncodedShard, "(")
 	if len(p1) < 2 {
 		return nil, errors.New(errMsgInvalidSimpleFmt)

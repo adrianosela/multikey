@@ -22,30 +22,21 @@ const (
 // with Shamir's Secret Sharing Algorithm
 type shard struct {
 	Value []byte
-
-	// since Shamir's secret sharing algorithm requires threshold >= 2
-	// to split a secret, whenever we want one-of-n keys to be enough to
-	// decrypt a shard we need to share an additional piece of the secret
-	// with all the keyholders
-	HelperPiece []byte
 }
 
 // encryptedShard represents a shard that has been encrypted
 type encryptedShard struct {
 	Value string `json:"value"`
 	KeyID string `json:"key_id"`
-
-	Helper string `json:"h"`
 }
 
 // newShard returns a populated Shard struct
-func newShard(value, helperPiece []byte) (*shard, error) {
+func newShard(value []byte) (*shard, error) {
 	if len(value) == 0 {
 		return nil, errors.New(errMsgEmptyValue)
 	}
 	return &shard{
-		Value:       value,
-		HelperPiece: helperPiece,
+		Value: value,
 	}, nil
 }
 
@@ -58,16 +49,10 @@ func (s *shard) encrypt(k *rsa.PublicKey) (*encryptedShard, error) {
 	if err != nil {
 		return nil, err
 	}
-	sh := &encryptedShard{
+	return &encryptedShard{
 		Value: armoured,
 		KeyID: keys.GetFingerprint(k),
-	}
-	if s.HelperPiece != nil && len(s.HelperPiece) > 0 {
-		// ignore the error, since the validity of the key has
-		// been proven, and the helper piece is non nil
-		sh.Helper, _ = encryptAndArmourShamirPart(s.HelperPiece, k)
-	}
-	return sh, nil
+	}, nil
 }
 
 // Decrypt decrypts an EncryptedShard
@@ -76,14 +61,11 @@ func (es *encryptedShard) decrypt(k *rsa.PrivateKey) (*shard, error) {
 	if es.KeyID != fp {
 		return nil, errors.New(errMsgIncorrectDecryptionKey)
 	}
-	sh := &shard{}
-	var err error
-	if sh.Value, err = decryptAndUnarmourShamirPart(es.Value, k); err != nil {
+	val, err := decryptAndUnarmourShamirPart(es.Value, k)
+	if err != nil {
 		return nil, err
 	}
-	// ignore err - validity of the key has been proven already
-	sh.HelperPiece, _ = decryptAndUnarmourShamirPart(es.Helper, k)
-	return sh, nil
+	return &shard{Value: val}, nil
 }
 
 // decryptAndUnarmourShamirPart -

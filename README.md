@@ -25,11 +25,12 @@
 
 ## Usage
 
+#### Encrypt:
 ```
 mkEncryptedSecret, err := Encrypt(plainTxtSecret, pubKeys, requireN)
 checkErr(err)
 ```
-
+#### Decrypt:
 ```
 plainTxtSecret, err := Decrypt(mkEncryptedSecret, privKeys)
 checkErr(err)

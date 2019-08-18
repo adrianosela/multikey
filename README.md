@@ -25,13 +25,17 @@
 
 ## Usage
 
+```
+import "github.com/adrianosela/multikey"
+```
+
 #### Encrypt:
 ```
-mkEncryptedSecret, err := Encrypt(plainTxtSecret, pubKeys, requireN)
+mkEncryptedSecret, err := multikey.Encrypt(plainTxtSecret, pubKeys, requireN)
 checkErr(err)
 ```
 #### Decrypt:
 ```
-plainTxtSecret, err := Decrypt(mkEncryptedSecret, privKeys)
+plainTxtSecret, err := multikey.Decrypt(mkEncryptedSecret, privKeys)
 checkErr(err)
 ```

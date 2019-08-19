@@ -1,4 +1,4 @@
-# multikey - secrets framework
+# multikey - Require n-of-N keys to decrypt
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/adrianosela/multikey)](https://goreportcard.com/report/github.com/adrianosela/multikey)
 [![GitHub issues](https://img.shields.io/github/issues/adrianosela/multikey.svg)](https://github.com/adrianosela/multikey/issues)

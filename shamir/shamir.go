@@ -14,7 +14,6 @@ import (
 // than 256. The returned shares are each one byte longer than the secret
 // as they attach a tag used to reconstruct the secret.
 func Split(secret []byte, parts, threshold int) ([][]byte, error) {
-	// Sanity check the input
 	if parts < threshold {
 		return nil, fmt.Errorf("parts cannot be less than threshold")
 	}
@@ -24,8 +23,8 @@ func Split(secret []byte, parts, threshold int) ([][]byte, error) {
 	if parts > 255 {
 		return nil, fmt.Errorf("parts cannot exceed 255")
 	}
-	if threshold < 1 {
-		return nil, fmt.Errorf("threshold must be at least 1")
+	if threshold < 2 { // need polynomial of degree at least 2
+		return nil, fmt.Errorf("threshold must be at least 2")
 	}
 	if len(secret) == 0 {
 		return nil, fmt.Errorf("cannot split an empty secret")

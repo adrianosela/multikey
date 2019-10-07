@@ -24,14 +24,14 @@ func TestEncryptDecrypt(t *testing.T) {
 		privs = append(privs, pri)
 		pubs = append(pubs, pub)
 	}
-	// encrypt with 1 to n keys
-	for e := 1; e <= n; e++ {
+	// encrypt with 2 to n keys
+	for e := 2; e <= n; e++ {
 		s, err := Encrypt(testSecret, pubs, e)
 		if err != nil {
 			assert.Fail(t, "could not encrypt test secret")
 		}
 		// decrypt unsuccessfully with 1 to e keys
-		for d := 1; d < e; d++ {
+		for d := 2; d < e; d++ {
 			plain, _ := Decrypt(s, privs[:d])
 			assert.NotEqual(t, plain, testSecret)
 		}

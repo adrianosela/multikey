@@ -24,7 +24,7 @@ func Split(secret []byte, parts, threshold int) ([][]byte, error) {
 	if parts > 255 {
 		return nil, fmt.Errorf("parts cannot exceed 255")
 	}
-	if threshold < 2 {
+	if threshold < 1 {
 		return nil, fmt.Errorf("threshold must be at least 2")
 	}
 	if len(secret) == 0 {

@@ -1,2 +1,12 @@
-- name: Upload coverage reports to Codecov
-  uses: codecov/codecov-action@v3
+name: Coverage
+on: [pull_request, push]
+
+jobs:
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3

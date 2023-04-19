@@ -74,7 +74,7 @@ func Div(a, b uint8) uint8 {
 	return ret
 }
 
-//-------------------------- TABLES ----------------------------
+// -------------------------- TABLES ----------------------------
 // The log and exp tables below use 0xe5 (229) as the generator
 // - logTable provides the log(X)/log(g) at each index X
 // - expTable provides the anti-log (or exp) at each index X
